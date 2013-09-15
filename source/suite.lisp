@@ -13,6 +13,7 @@
   (apply #'make-instance 'test :name name args))
 
 (defmacro defsuite (name-or-name-with-args &optional args &body body)
+  ;; defsuite actually defines a test which runs the subtests init
   (destructuring-bind (name &rest deftest-args)
       (ensure-list name-or-name-with-args)
     (let ((bind-to-package (getf deftest-args :bind-to-package)))
@@ -27,11 +28,14 @@
              (let* ((,test (find-test ',name)))
                (labels ((-run-child-tests- ()
                           (loop
-                            :for subtest :being :the :hash-values :of (children-of ,test)
-                            :when (and (auto-call? subtest)
-                                       (or (zerop (length (lambda-list-of subtest)))
-                                           (member (first (lambda-list-of subtest)) '(&rest &key &optional))))
-                              :do (funcall (name-of subtest))))
+                             :for subtest :being :the :hash-values :of (children-of ,test)
+                             ;; only those test whose lambda-list has
+                             ;; 0 argument or can be called with 0
+                             ;; argument are executed.
+                             :when (and (auto-call? subtest)
+                                        (or (zerop (length (lambda-list-of subtest)))
+                                            (member (first (lambda-list-of subtest)) '(&rest &key &optional))))
+                             :do (funcall (name-of subtest))))
                         (run-child-tests ()
                           ;; TODO delme eventually?
                           ;; (simple-style-warning "~S is obsolete, use ~S to invoke child tests in a testsuite!" 'run-child-tests '-run-child-tests-)
@@ -44,7 +48,7 @@
              (values))
            (let ((suite (find-test ',name)))
              ,(when bind-to-package
-                `(setf (gethash ,bind-to-package *package-bound-suites*) suite))
+                    `(setf (gethash ,bind-to-package *package-bound-suites*) suite))
              (values suite)))))))
 
 (defmacro defsuite* (name-or-name-with-args &optional args &body body)
@@ -104,9 +108,9 @@ PACKAGE-OPTIONS, automatically USEs the :STEFIL and :CL packages."
                              :bind-to-package ,name
                              :in stefil-suites::all-tests))
        (defun ,run-package-tests (&key (describe-failures t)
-                                       verbose
-                                       (stream t)
-                                       interactive)
+                                  verbose
+                                  (stream t)
+                                  interactive)
          (run-suite-tests ',suite-sym
                           :verbose verbose
                           :stream stream
@@ -146,7 +150,7 @@ PACKAGE-OPTIONS, automatically USEs the :STEFIL and :CL packages."
   (labels ((depth-of (context)
              (let ((depth 0))
                (loop while (setf context (parent-context-of context))
-                     do (incf depth))
+                  do (incf depth))
                depth))
            (pp (suffix format-control &rest format-args)
              (let* ((depth (depth-of (current-context)))
@@ -184,11 +188,11 @@ PACKAGE-OPTIONS, automatically USEs the :STEFIL and :CL packages."
                                                       (find desc *pretty-log-accumulated-failure-descriptions*))
                                                   (failure-descriptions-of results)))
                  (failed-assertion-count
-                   (count-if (alexandria:rcurry #'typep 'failed-assertion) failure-descriptions))
+                  (count-if (alexandria:rcurry #'typep 'failed-assertion) failure-descriptions))
                  (unexpected-error-count
-                   (count-if (alexandria:rcurry #'typep 'unexpected-error) failure-descriptions))
+                  (count-if (alexandria:rcurry #'typep 'unexpected-error) failure-descriptions))
                  (expected-count
-                   (count-if 'expected-p failure-descriptions)))
+                  (count-if 'expected-p failure-descriptions)))
             (pp nil
                 "    (~A assertions, ~A failed, ~A errors, ~A expected)~%"
                 assertion-count failed-assertion-count unexpected-error-count expected-count))))
@@ -201,7 +205,7 @@ PACKAGE-OPTIONS, automatically USEs the :STEFIL and :CL packages."
     (let ((output (format nil "~?~%" format-control format-arguments)))
       (with-input-from-string (s output)
         (loop for line = (read-line s nil nil) until (null line)
-              do (format stream "~A~A~%" line-prefix line))))))
+           do (format stream "~A~A~%" line-prefix line))))))
 
 (defun describe-failed-tests (&key (result *last-test-result*) (stream t))
   "Prints out a report for RESULT in STREAM.

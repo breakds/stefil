@@ -6,7 +6,7 @@
 
 (in-package :stefil)
 
-;; Warning: setf-ing these variables in not a smart idea because other systems may rely on their default value.
+;; Warning: setf-ing these variables is not a smart idea because other systems may rely on their default value.
 ;; It's smarter to rebind them in an :around method from your .asd or shadow stefil:deftest with your own that sets
 ;; their keyword counterparts.
 (defvar *suite*)
@@ -191,6 +191,9 @@
 ;;; test repository
 
 (defun find-test (name &key (otherwise :error))
+  "If a testable sepcified by name exists, return itself and
+t (Values), otherwise, the action is defined by otherwise. Note that
+name can be a testable isself, or a name in the *tests* hashtable."
   (multiple-value-bind (test found-p)
       (if (typep name 'testable)
           (values name t)
