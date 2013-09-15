@@ -75,17 +75,34 @@ load or compile it, and in your REPL run
 
 Yay, everything fails!
 
+
+### Test Cases
+
+You can also specify constant test cases for a test with arguments. Each test case is a list of argument lists.
+In testing time, this test will be executed with each argument list. For example, the test `test-conversion-to-seconds`
+can be written as
+
+    (deftest (test-conversion-to-seconds 
+                 :cases ((60 '(0 1))
+                         (4500 '(1 15))))
+             (expeced minute-spec)
+       (is (= expected (seconds minute-spec))))
+
+
+
 Debugging failures
 ------------------
 
 Run with `:interactive t` to bring up the lisp debugger every time a test
 failure (lisp error or assertion failure). This allows us to
 see that the the stack overflow erros are due to a typo (`seconds` should be
-`second` in line 6) and that `hours-and-minutes` should be rewritten like
+`second` in line 6) and that `hours-and-minutes` should be rewritten as
 
-    (defun hours-and-minutes (seconds)
-      (list (truncate seconds 3600)
-            (/ (rem seconds 3600) 60)))
+    (deftest (test-conversion-to-seconds 
+              :cases ((60 '(0 1))
+                      (4500 '(1 15))))
+        (expeced minute-spec)
+      (is (= expected (seconds minute-spec))))
 
 After that, you'll see a nice
 
